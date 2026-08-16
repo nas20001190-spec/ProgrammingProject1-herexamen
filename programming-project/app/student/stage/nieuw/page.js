@@ -24,7 +24,7 @@ export default function NieuweStageAanvraag() {
   })
 
   useEffect(() => {
-    fetchMetAuth('/api/user/profiel')
+    fetchMetAuth('/api/student/gegevens')
       .then(res => res?.json())
       .then(data => { if (data && !data.fout) setStudent(data) })
       .catch(() => {})
