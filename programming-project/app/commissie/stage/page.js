@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import Topbar from '../component/topbar';
 import { fetchMetAuth } from '@/app/lib/fetchMetAuth';
 
@@ -78,12 +77,15 @@ export default function CommissieStagePage() {
                 <th className="text-left px-5 py-3 text-xs font-medium text-gray-400">Mentor</th>
                 <th className="text-left px-5 py-3 text-xs font-medium text-gray-400">Periode</th>
                 <th className="text-left px-5 py-3 text-xs font-medium text-gray-400">Status</th>
-                <th className="text-right px-5 py-3 text-xs font-medium text-gray-400"></th>
               </tr>
             </thead>
             <tbody>
               {gefilterd.map((s) => (
-                <tr key={s.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                <tr
+                  key={s.id}
+                  onClick={() => window.location.href = `/commissie/stage/${s.id}`}
+                  className="border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer"
+                >
                   <td className="px-5 py-4 font-medium text-gray-900">{s.student_voornaam} {s.student_achternaam}</td>
                   <td className="px-5 py-4 text-gray-600">{s.bedrijf_naam}</td>
                   <td className="px-5 py-4 text-gray-600">{s.mentor_voornaam} {s.mentor_achternaam}</td>
@@ -95,16 +97,11 @@ export default function CommissieStagePage() {
                       {s.status.charAt(0).toUpperCase() + s.status.slice(1)}
                     </span>
                   </td>
-                  <td className="px-5 py-4 text-right">
-                    <Link href={`/commissie/stage/${s.id}`} className="text-sm text-blue-600 hover:underline font-medium">
-                      Beoordelen
-                    </Link>
-                  </td>
                 </tr>
               ))}
               {gefilterd.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-5 py-8 text-center text-gray-400">
+                  <td colSpan={5} className="px-5 py-8 text-center text-gray-400">
                     Geen stages gevonden voor dit filter.
                   </td>
                 </tr>
