@@ -3,9 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { StickyNote, Layers } from "lucide-react";
+import { LayoutDashboard, StickyNote, Layers } from "lucide-react";
 
 const navItems = [
+  {
+    href: "/commissie/dashboard",
+    label: "dashboard",
+    icon: <LayoutDashboard className="w-4 h-4" />,
+  },
   {
     href: "/commissie/stage",
     label: "stage",
