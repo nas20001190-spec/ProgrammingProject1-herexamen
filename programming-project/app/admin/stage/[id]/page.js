@@ -13,6 +13,7 @@ export default function StageDetailPage() {
   const [bezig, setBezig] = useState(false);
   const [docenten, setDocenten] = useState([]);
   const [status, setStatus] = useState('');
+  const [feedbackCommissie, setFeedbackCommissie] = useState('');
 
   const [form, setForm] = useState({
     student_voornaam: '', student_achternaam: '', student_email: '', student_telefoon: '',
@@ -20,7 +21,7 @@ export default function StageDetailPage() {
     bedrijf_naam: '', bedrijf_adres: '', sector: '', website: '',
     mentor_voornaam: '', mentor_achternaam: '', mentor_email: '', mentor_telefoon: '', mentor_functie: '',
     opdracht_omschrijving: '', startdatum: '', einddatum: '', aantal_weken: '', uren_per_week: '',
-    docent_id: '', feedback_commissie: '',
+    docent_id: '',
   });
 
   useEffect(() => {
@@ -31,6 +32,7 @@ export default function StageDetailPage() {
       .then(data => {
         if (data && !data.fout) {
           setStatus(data.status || '');
+          setFeedbackCommissie(data.feedback_commissie || '');
           setForm({
             student_voornaam: data.student_voornaam || '',
             student_achternaam: data.student_achternaam || '',
@@ -54,7 +56,6 @@ export default function StageDetailPage() {
             aantal_weken: data.aantal_weken ?? '',
             uren_per_week: data.uren_per_week ?? '',
             docent_id: data.docent_id ?? '',
-            feedback_commissie: data.feedback_commissie || '',
           });
         }
         setLoading(false);
@@ -75,18 +76,11 @@ export default function StageDetailPage() {
     ? 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-500 bg-gray-50'
     : 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#1A2E4A] focus:border-transparent';
 
-  const verstuur = async (nieuweStatus) => {
-    const teksten = {
-      goedgekeurd: 'Weet u zeker dat u deze stage wilt goedkeuren?',
-      aanpassingen: 'Aanpassingen vereist versturen?',
-      afgekeurd: 'Weet u zeker dat u deze stage wilt afkeuren?',
-    };
-    if (!window.confirm(teksten[nieuweStatus])) return;
-
+  const opslaan = async () => {
     setBezig(true);
     const response = await fetchMetAuth(`/api/admin/stages/${id}`, {
       method: 'PUT',
-      body: JSON.stringify({ ...form, status: nieuweStatus }),
+      body: JSON.stringify(form),
     });
     if (!response) { setBezig(false); return; }
     const data = await response.json();
@@ -97,6 +91,14 @@ export default function StageDetailPage() {
       alert(data.fout || 'Er ging iets mis');
       setBezig(false);
     }
+  };
+
+  const statusLabel = {
+    ingediend: 'In afwachting van beoordeling door de stagecommissie',
+    aanpassingen: 'Aanpassingen vereist',
+    goedgekeurd: 'Goedgekeurd',
+    actief: 'Actief',
+    afgekeurd: 'Afgekeurd',
   };
 
   if (loading) {
@@ -244,24 +246,22 @@ export default function StageDetailPage() {
               </select>
             </div>
 
-            {!isGesloten ? (
-              <div className="bg-orange-50 rounded-xl border border-orange-100 p-5">
-                <h3 className="text-sm font-bold text-gray-900 mb-1">Beoordeling</h3>
-                <p className="text-xs text-gray-400 mb-1">Huidige status: <span className="font-medium">{status}</span></p>
-                <p className="text-xs text-gray-400 mb-4">Beoordeel de stageaanvraag</p>
-                <label className="text-xs text-gray-500 block mb-2">Feedback (bij aanpassingen)</label>
-                <textarea value={form.feedback_commissie} onChange={(e) => update('feedback_commissie', e.target.value)} placeholder="Geef duidelijke feedback..." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 mb-4 resize-none bg-white focus:outline-none focus:ring-2 focus:ring-[#1A2E4A] focus:border-transparent" rows={3} />
-                <div className="flex flex-col gap-2">
-                  <button onClick={() => verstuur('goedgekeurd')} disabled={bezig || form.feedback_commissie.trim().length > 0} className="w-full py-2.5 rounded-lg text-sm font-medium text-white bg-[#065F46] hover:bg-[#054F3B] disabled:opacity-50 transition-colors">Goedkeuren</button>
-                  <button onClick={() => verstuur('aanpassingen')} disabled={bezig} className="w-full py-2.5 rounded-lg text-sm font-medium text-white bg-[#D97706] hover:bg-[#B45309] disabled:opacity-50 transition-colors">Aanpassingen vereist</button>
-                  <button onClick={() => verstuur('afgekeurd')} disabled={bezig} className="w-full py-2.5 rounded-lg text-sm font-medium text-white bg-[#DC2626] hover:bg-[#B91C1C] disabled:opacity-50 transition-colors">Afkeuren</button>
-                </div>
-              </div>
-            ) : (
-              <div className="bg-green-50 rounded-xl border border-green-100 p-5">
-                <h3 className="text-sm font-bold text-gray-900 mb-1">Status</h3>
-                <p className="text-sm text-gray-600">Deze stage is <span className="font-semibold">{status}</span> en kan niet meer worden beoordeeld.</p>
-              </div>
+            <div className="bg-gray-50 rounded-xl border border-gray-100 p-5">
+              <h3 className="text-sm font-bold text-gray-900 mb-1">Status</h3>
+              <p className="text-sm text-gray-600 mb-2">{statusLabel[status] || status}</p>
+              {feedbackCommissie && (
+                <>
+                  <p className="text-xs text-gray-400 mb-1 mt-3">Feedback van de stagecommissie</p>
+                  <p className="text-sm text-gray-600">{feedbackCommissie}</p>
+                </>
+              )}
+              <p className="text-xs text-gray-400 mt-3">Beoordeling gebeurt door de stagecommissie.</p>
+            </div>
+
+            {!isGesloten && (
+              <button onClick={opslaan} disabled={bezig} className="w-full py-2.5 rounded-lg text-sm font-medium text-white bg-[#1A2E4A] hover:bg-[#152438] disabled:opacity-50 transition-colors">
+                {bezig ? 'Bezig...' : 'Opslaan'}
+              </button>
             )}
           </div>
         </div>
