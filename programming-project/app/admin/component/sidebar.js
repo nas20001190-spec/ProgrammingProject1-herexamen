@@ -11,6 +11,8 @@ import {
   BookOpen,
   ClipboardList,
   Layers,
+  Shield,
+  Gavel,
 } from "lucide-react";
 
 const navItems = [
@@ -38,6 +40,16 @@ const navItems = [
     href: "/admin/stagementors",
     label: "stagementors",
     icon: <Users className="w-4 h-4" />,
+  },
+  {
+    href: "/admin/commissie",
+    label: "commissie",
+    icon: <Gavel className="w-4 h-4" />,
+  },
+  {
+    href: "/admin/admins",
+    label: "admins",
+    icon: <Shield className="w-4 h-4" />,
   },
   {
     href: "/admin/overeenkomsten",
