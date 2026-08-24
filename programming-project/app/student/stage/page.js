@@ -79,6 +79,10 @@ export default function StageAanvragen() {
     const data = await response.json();
     if (response.ok) {
       alert(data.bericht);
+      if (actie === "accepteren") {
+        router.push("/student/dashboard");
+        return;
+      }
       fetchMetAuth("/api/student/stage")
         .then((res) => res?.json())
         .then((d) => setAanvragen(d ?? []));
