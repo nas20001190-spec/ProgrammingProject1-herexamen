@@ -82,7 +82,6 @@ export async function GET(request, { params }) {
     body { font-family: 'Helvetica Neue', Arial, sans-serif; font-size:13px; color:#111; background:#fff; padding:40px; }
     .header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:32px; padding-bottom:20px; border-bottom:2px solid #1A2E4A; }
     .logo { display:flex; align-items:center; gap:10px; }
-    .logo-box { width:36px; height:36px; background:#1A2E4A; border-radius:6px; }
     .logo-text { font-size:20px; font-weight:700; color:#1A2E4A; }
     .doc-info { text-align:right; font-size:11px; color:#6B7280; }
     h1 { font-size:22px; font-weight:700; color:#1A2E4A; margin-bottom:4px; }
@@ -109,7 +108,11 @@ export async function GET(request, { params }) {
 
   <div class="header">
     <div class="logo">
-      <div class="logo-box"></div>
+      <svg width="36" height="36" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <rect width="120" height="120" rx="20" fill="#1a2340"/>
+        <path d="M50 45 A30 30 0 1 0 50 75" fill="none" stroke="white" stroke-width="9" stroke-linecap="round"/>
+        <polyline points="65,68 75,80 95,55" fill="none" stroke="#4ade80" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
       <div>
         <div class="logo-text">Competent</div>
         <div style="font-size:11px;color:#6B7280;">Erasmushogeschool Brussel</div>
