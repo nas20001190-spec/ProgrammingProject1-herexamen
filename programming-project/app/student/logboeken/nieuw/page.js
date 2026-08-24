@@ -114,12 +114,18 @@ function LogboekNieuwInner() {
     setForm(prev => ({ ...prev, datum, uren: '', taken: '', reflectie: '', leerpunten: '', geselecteerdeCompetenties: [] }))
   }
 
+  const isAfwezig = form.uren === '0'
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setFout('')
 
-    if (!form.datum || form.uren === '' || !form.taken) {
-      setFout('Vul alle verplichte velden in!')
+    if (!form.datum || form.uren === '') {
+      setFout('Vul minstens de datum en uren in!')
+      return
+    }
+    if (!isAfwezig && !form.taken) {
+      setFout('Vul de uitgevoerde taken in, of zet uren op 0 als je afwezig was.')
       return
     }
 
@@ -135,7 +141,7 @@ function LogboekNieuwInner() {
         dagen: [{
           datum: form.datum,
           uren: parseFloat(form.uren),
-          taken: form.taken,
+          taken: isAfwezig ? (form.taken || 'Afwezig') : form.taken,
           reflectie: form.reflectie,
           leerpunten: form.leerpunten,
           competenties: form.geselecteerdeCompetenties,
@@ -217,10 +223,35 @@ function LogboekNieuwInner() {
                   </h2>
 
                   <div className="mb-4">
-                    <label className="block text-xs text-gray-500 mb-1">Uitgevoerde taken *</label>
+                    <label className="block text-xs text-gray-500 mb-1">
+                      Gewerkte uren *
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="12"
+                      step="0.5"
+                      className="w-32 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
+                      placeholder="8"
+                      value={form.uren}
+                      onChange={e => setForm({...form, uren: e.target.value})}
+                    />
+                    <span className="text-xs text-gray-400 ml-2">(0u = afwezig)</span>
+                  </div>
+
+                  {isAfwezig && (
+                    <div className="mb-4 bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-700">
+                      Je bent afwezig genoteerd voor deze dag. De overige velden zijn optioneel.
+                    </div>
+                  )}
+
+                  <div className="mb-4">
+                    <label className="block text-xs text-gray-500 mb-1">
+                      Uitgevoerde taken {!isAfwezig && '*'}
+                    </label>
                     <textarea
                       className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400 h-24 resize-none"
-                      placeholder="Beschrijf wat je vandaag hebt gedaan..."
+                      placeholder={isAfwezig ? 'Optioneel — reden van afwezigheid...' : 'Beschrijf wat je vandaag hebt gedaan...'}
                       value={form.taken}
                       onChange={e => setForm({...form, taken: e.target.value})}
                     />
@@ -236,7 +267,7 @@ function LogboekNieuwInner() {
                     />
                   </div>
 
-                  <div className="mb-4">
+                  <div>
                     <label className="block text-xs text-gray-500 mb-1">Leerpunten / problemen</label>
                     <textarea
                       className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400 h-24 resize-none"
@@ -244,21 +275,6 @@ function LogboekNieuwInner() {
                       value={form.leerpunten}
                       onChange={e => setForm({...form, leerpunten: e.target.value})}
                     />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Gewerkte uren *</label>
-                    <input
-                      type="number"
-                      min="0"
-                      max="12"
-                      step="0.5"
-                      className="w-32 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
-                      placeholder="8"
-                      value={form.uren}
-                      onChange={e => setForm({...form, uren: e.target.value})}
-                    />
-                    <span className="text-xs text-gray-400 ml-2">(0u = afwezig/ziek)</span>
                   </div>
                 </div>
               )}

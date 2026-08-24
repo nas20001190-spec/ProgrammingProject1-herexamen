@@ -66,7 +66,10 @@ export default function Logboeken() {
     : [];
   const vorigeWeek = weken.find((w) => w.week_nummer === week - 1);
 
-  const kanToevoegen = week === 1 || vorigeWeek?.status === "ingediend" || vorigeWeek?.status === "goedgekeurd";
+  const kanToevoegen =
+    week === 1 ||
+    vorigeWeek?.status === "ingediend" ||
+    vorigeWeek?.status === "goedgekeurd";
   const kanIndienen =
     huidigWeek &&
     dagenDezeWeek.length >= 5 &&
@@ -246,9 +249,15 @@ export default function Logboeken() {
                           {fmt(dagStr)}
                         </span>
                         {dag ? (
-                          <span className="text-green-600 font-medium text-xs">
-                            {dag.uren}u ingevuld
-                          </span>
+                          dag.uren > 0 ? (
+                            <span className="text-green-600 font-medium text-xs">
+                              {dag.uren}u ingevuld
+                            </span>
+                          ) : (
+                            <span className="text-amber-700 font-medium text-xs">
+                              Afwezig
+                            </span>
+                          )
                         ) : (
                           <span className="text-gray-300 text-xs">
                             Nog open
@@ -266,7 +275,8 @@ export default function Logboeken() {
                   Week indienen bij stagementor
                 </div>
                 <div className="text-xs text-gray-400">
-                  Alle 5 dagen moeten ingevuld zijn met uren.
+                  Alle 5 dagen moeten ingevuld zijn (afwezig telt ook als
+                  ingevuld).
                 </div>
               </div>
               <button
