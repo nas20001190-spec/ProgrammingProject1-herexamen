@@ -3,68 +3,18 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import {
-  LayoutDashboard,
-  Users,
-  StickyNote,
-  GraduationCap,
-  BookOpen,
-  ClipboardList,
-  Layers,
-  Shield,
-  Gavel,
-} from "lucide-react";
+import { LayoutDashboard, StickyNote, Layers } from "lucide-react";
 
 const navItems = [
   {
-    href: "/admin/dashboard",
+    href: "/commissie/dashboard",
     label: "dashboard",
     icon: <LayoutDashboard className="w-4 h-4" />,
   },
   {
-    href: "/admin/stage",
+    href: "/commissie/stage",
     label: "stage",
     icon: <StickyNote className="w-4 h-4" />,
-  },
-  {
-    href: "/admin/studenten",
-    label: "studenten",
-    icon: <Users className="w-4 h-4" />,
-  },
-  {
-    href: "/admin/docenten",
-    label: "docenten",
-    icon: <Users className="w-4 h-4" />,
-  },
-  {
-    href: "/admin/stagementors",
-    label: "stagementors",
-    icon: <Users className="w-4 h-4" />,
-  },
-  {
-    href: "/admin/commissie",
-    label: "commissie",
-    icon: <Gavel className="w-4 h-4" />,
-  },
-  {
-    href: "/admin/admins",
-    label: "admins",
-    icon: <Shield className="w-4 h-4" />,
-  },
-  {
-    href: "/admin/overeenkomsten",
-    label: "overeenkomsten",
-    icon: <GraduationCap className="w-4 h-4" />,
-  },
-  {
-    href: "/admin/competenties",
-    label: "competenties",
-    icon: <BookOpen className="w-4 h-4" />,
-  },
-  {
-    href: "/admin/evaluaties",
-    label: "evaluaties",
-    icon: <ClipboardList className="w-4 h-4" />,
   },
 ];
 
@@ -128,28 +78,17 @@ export default function Sidebar() {
         })}
       </nav>
 
-      <Link
-        href="/admin/profiel"
-        className={`flex items-center gap-2.5 px-4 py-3 border-t border-gray-100 mt-2 hover:bg-gray-50 ${
-          pathname === "/admin/profiel" ? "bg-[#eef2ff]" : ""
-        }`}
-      >
-        <div
-          className={`w-8 h-8 rounded-full grid place-items-center text-xs font-bold flex-shrink-0 ${
-            pathname === "/admin/profiel"
-              ? "bg-[#1e3a5f] text-white"
-              : "bg-[#B5D4F4] text-[#0C447C]"
-          }`}
-        >
+      <div className="flex items-center gap-2.5 px-4 py-3 border-t border-gray-100 mt-2">
+        <div className="w-8 h-8 rounded-full grid place-items-center text-xs font-bold flex-shrink-0 bg-[#B5D4F4] text-[#0C447C]">
           {initials}
         </div>
         <div className="min-w-0">
           <div className="text-xs font-semibold text-gray-900 truncate">
             {user?.name ?? "—"}
           </div>
-          <div className="text-xs text-gray-400">Admin</div>
+          <div className="text-xs text-gray-400">Stagecommissie</div>
         </div>
-      </Link>
+      </div>
     </aside>
   );
 }

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import db from '@/app/lib/db'
 import { verifyToken, checkRol } from '@/app/lib/auth'
-import { stuurMail } from '@/app/lib/mailer'
 
 export async function GET(request, { params }) {
   try {
@@ -70,10 +69,9 @@ export async function PUT(request, { params }) {
       )
     }
 
-    let mentorUserId = null
     if (stagementor_id) {
       const [smRows] = await db.query('SELECT user_id, bedrijf_id FROM stagementor WHERE id = ?', [stagementor_id])
-      mentorUserId = smRows[0]?.user_id
+      const mentorUserId = smRows[0]?.user_id
       const bedrijfId = smRows[0]?.bedrijf_id
       if (mentorUserId) {
         await db.query(
@@ -93,8 +91,7 @@ export async function PUT(request, { params }) {
     await db.query(
       `UPDATE stage SET
         docent_id=?, opdracht_omschrijving=?, startdatum=?, einddatum=?,
-        aantal_weken=?, uren_per_week=?, status=?, feedback_commissie=?,
-        goedgekeurd_op = CASE WHEN ? = 'goedgekeurd' THEN NOW() ELSE goedgekeurd_op END
+        aantal_weken=?, uren_per_week=?
       WHERE id=?`,
       [
         body.docent_id || null,
@@ -103,36 +100,11 @@ export async function PUT(request, { params }) {
         body.einddatum || null,
         body.aantal_weken || null,
         body.uren_per_week || null,
-        body.status,
-        body.feedback_commissie,
-        body.status,
         id,
       ]
     )
 
-    if (body.status === 'goedgekeurd' && body.mentor_email) {
-      try {
-        const code = Math.floor(100000 + Math.random() * 900000).toString()
-        const vervalt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-        if (mentorUserId) {
-          await db.query('UPDATE user SET reset_code=?, reset_code_expiry=? WHERE id=?', [code, vervalt, mentorUserId])
-        }
-        const link = `${process.env.APP_URL}/authentificator/first-time?email=${encodeURIComponent(body.mentor_email)}`
-        await stuurMail({
-          naar: body.mentor_email,
-          onderwerp: 'Activeer uw Competent-account',
-          html: `<p>Beste ${body.mentor_voornaam || ''},</p>
-                 <p>Een stage werd goedgekeurd en u bent aangeduid als stagementor. Activeer uw account met deze code:</p>
-                 <p style="font-size:24px;font-weight:bold;letter-spacing:3px;">${code}</p>
-                 <p><a href="${link}">${link}</a></p>
-                 <p>Deze code is 7 dagen geldig.</p>`,
-        })
-      } catch (mailError) {
-        console.error('Mail mislukt:', mailError)
-      }
-    }
-
-    return NextResponse.json({ bericht: 'Stage bijgewerkt!' })
+    return NextResponse.json({ bericht: 'Stagegegevens bijgewerkt!' })
   } catch (error) {
     return NextResponse.json({ fout: error.message }, { status: 500 })
   }
