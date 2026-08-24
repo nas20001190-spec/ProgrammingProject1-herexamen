@@ -66,11 +66,11 @@ export default function Logboeken() {
     : [];
   const vorigeWeek = weken.find((w) => w.week_nummer === week - 1);
 
-  const kanToevoegen = week === 1 || vorigeWeek?.status === "ingediend";
+  const kanToevoegen = week === 1 || vorigeWeek?.status === "ingediend" || vorigeWeek?.status === "goedgekeurd";
   const kanIndienen =
     huidigWeek &&
     dagenDezeWeek.length >= 5 &&
-    dagenDezeWeek.every((d) => d.uren > 0) &&
+    dagenDezeWeek.every((d) => d.uren >= 0) &&
     huidigWeek.status !== "ingediend" &&
     huidigWeek.status !== "goedgekeurd";
   const datums = stage?.startdatum
