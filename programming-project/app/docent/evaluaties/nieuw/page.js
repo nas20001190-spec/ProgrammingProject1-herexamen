@@ -12,13 +12,11 @@ export default function NieuweEvaluatiePage() {
   const [loading, setLoading] = useState(true)
   const [bezig, setBezig] = useState(false)
   const [fout, setFout] = useState('')
+  const [geselecteerdeStudenten, setGeselecteerdeStudenten] = useState([])
 
   const [form, setForm] = useState({
-    stage_id: '',
     datum: '',
     type: 'tussentijds',
-    feedback: '',
-    scores: {},
   })
 
   useEffect(() => {
@@ -28,68 +26,82 @@ export default function NieuweEvaluatiePage() {
     ]).then(([studentenData, competentieData]) => {
       setStudenten(studentenData ?? [])
       setCompetenties(competentieData ?? [])
-      const initScores = {}
-      competentieData?.forEach(c => { initScores[c.id] = '' })
-      setForm(prev => ({ ...prev, scores: initScores }))
       setLoading(false)
     }).catch(() => setLoading(false))
   }, [])
 
   const isFinaal = form.type === 'finaal'
 
+  const competentieLabel = (c) => {
+    const dNummer = c.naam?.split(' ')[0] || ''
+    return `${dNummer} — ${c.omschrijving || c.naam}`
+  }
+
+  const alleGeselecteerd = studenten.length > 0 && geselecteerdeStudenten.length === studenten.length
+
+  const toggleStudent = (stage_id) => {
+    setGeselecteerdeStudenten(prev =>
+      prev.includes(stage_id) ? prev.filter(id => id !== stage_id) : [...prev, stage_id]
+    )
+  }
+
+  const toggleAlle = () => {
+    setGeselecteerdeStudenten(alleGeselecteerd ? [] : studenten.map(s => s.stage_id))
+  }
+
+  const maakEvaluatieAan = async (stage_id) => {
+    return fetchMetAuth('/api/docent/evaluaties', {
+      method: 'POST',
+      body: JSON.stringify({
+        stage_id: parseInt(stage_id),
+        type: form.type,
+        datum: isFinaal ? null : form.datum,
+        feedback: '',
+      })
+    })
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setFout('')
 
-    if (!form.stage_id) {
-      setFout('Selecteer een student!')
-      return
-    }
     if (!isFinaal && !form.datum) {
       setFout('Vul een deadline in!')
       return
     }
 
-    setBezig(true)
-
-    const response = await fetchMetAuth('/api/docent/evaluaties', {
-      method: 'POST',
-      body: JSON.stringify({
-        stage_id: parseInt(form.stage_id),
-        type: form.type,
-        datum: isFinaal ? null : form.datum,
-        feedback: form.feedback,
-      })
-    })
-
-    if (!response) { setBezig(false); return }
-    const data = await response.json()
-
-    if (!response.ok) {
-      setFout(data.fout)
-      setBezig(false)
+    if (geselecteerdeStudenten.length === 0) {
+      setFout('Selecteer minstens één student!')
       return
     }
 
-    const evaluatie_id = data.id
-
-    if (!isFinaal) {
-      const scoresArray = competenties.map(c => ({
-        competentie_id: c.id,
-        score_docent: form.scores[c.id] !== '' ? parseFloat(form.scores[c.id]) : null,
-      }))
-
-      await fetchMetAuth('/api/docent/evaluaties', {
-        method: 'PUT',
-        body: JSON.stringify({
-          evaluatie_id,
-          algemene_feedback: form.feedback,
-          scores: scoresArray,
-        })
-      })
+    if (geselecteerdeStudenten.length === 1) {
+      setBezig(true)
+      const response = await maakEvaluatieAan(geselecteerdeStudenten[0])
+      if (!response) { setBezig(false); return }
+      const data = await response.json()
+      if (!response.ok) {
+        setFout(data.fout)
+        setBezig(false)
+        return
+      }
+      router.push(`/docent/evaluaties/${data.id}`)
+      return
     }
 
-    router.push(`/docent/evaluaties/${evaluatie_id}`)
+    if (!window.confirm(`Evaluatie aanmaken voor ${geselecteerdeStudenten.length} studenten?`)) return
+
+    setBezig(true)
+    let gelukt = 0
+    let mislukt = 0
+    for (const stage_id of geselecteerdeStudenten) {
+      const response = await maakEvaluatieAan(stage_id)
+      if (response?.ok) gelukt++
+      else mislukt++
+    }
+    setBezig(false)
+    alert(`${gelukt} evaluatie(s) aangemaakt${mislukt > 0 ? `, ${mislukt} mislukt` : ''}.`)
+    router.push('/docent/evaluaties')
   }
 
   if (loading) {
@@ -102,28 +114,14 @@ export default function NieuweEvaluatiePage() {
 
   return (
     <div className="flex-1 flex flex-col">
-      <DocentTopbar titel="Nieuwe Evaluatie" subtitel="Evaluatie aanmaken voor een student" />
+      <DocentTopbar titel="Nieuwe Evaluatie" subtitel="Evaluatie aanmaken voor één of meerdere studenten" />
       <div className="flex-1 bg-gray-100 p-6 overflow-y-auto">
-        <form onSubmit={handleSubmit} className="max-w-3xl space-y-4">
+        <form onSubmit={handleSubmit} className="max-w-5xl space-y-4">
 
           <div className="bg-white rounded-xl p-5">
             <h2 className="text-sm font-semibold text-gray-800 mb-4">Evaluatie gegevens</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2">
-                <label className="block text-xs text-gray-500 mb-1">Student *</label>
-                <select
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
-                  value={form.stage_id}
-                  onChange={e => setForm({...form, stage_id: e.target.value})}
-                >
-                  <option value="">Selecteer student</option>
-                  {studenten.map(s => (
-                    <option key={s.stage_id} value={s.stage_id}>
-                      {s.voornaam} {s.achternaam} — {s.bedrijf_naam}
-                    </option>
-                  ))}
-                </select>
-              </div>
+
+            <div className="grid grid-cols-2 gap-4 mb-5">
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Type *</label>
                 <select
@@ -135,7 +133,7 @@ export default function NieuweEvaluatiePage() {
                   <option value="finaal">Finaal</option>
                 </select>
               </div>
-              {!isFinaal && (
+              {!isFinaal ? (
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">Deadline *</label>
                   <input
@@ -146,8 +144,7 @@ export default function NieuweEvaluatiePage() {
                   />
                   <p className="text-xs text-gray-400 mt-1">Na deze datum kan de evaluatie niet meer worden aangepast.</p>
                 </div>
-              )}
-              {isFinaal && (
+              ) : (
                 <div className="flex items-center">
                   <p className="text-xs text-gray-400 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 w-full">
                     Finale evaluatie — geen deadline. De presentatiedatum wordt later ingesteld.
@@ -155,59 +152,65 @@ export default function NieuweEvaluatiePage() {
                 </div>
               )}
             </div>
+
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs text-gray-500">Student(en) *</label>
+              <label className="flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={alleGeselecteerd}
+                  onChange={toggleAlle}
+                  className="w-3.5 h-3.5 accent-[#1e3a5f] cursor-pointer"
+                />
+                Alle studenten selecteren ({studenten.length})
+              </label>
+            </div>
+
+            {studenten.length === 0 ? (
+              <p className="text-sm text-gray-400">Geen studenten gevonden.</p>
+            ) : (
+              <div className="border border-gray-200 rounded-lg divide-y divide-gray-100 max-h-64 overflow-y-auto">
+                {studenten.map(s => (
+                  <label
+                    key={s.stage_id}
+                    className="flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={geselecteerdeStudenten.includes(s.stage_id)}
+                      onChange={() => toggleStudent(s.stage_id)}
+                      className="w-4 h-4 accent-[#1e3a5f] cursor-pointer"
+                    />
+                    <span className="font-medium">{s.voornaam} {s.achternaam}</span>
+                    <span className="text-gray-400">— {s.bedrijf_naam}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+            {geselecteerdeStudenten.length > 0 && (
+              <p className="text-xs text-gray-400 mt-2">
+                {geselecteerdeStudenten.length} student(en) geselecteerd
+              </p>
+            )}
           </div>
 
-          {!isFinaal && (
-            <>
-              <div className="bg-white rounded-xl p-5">
-                <h2 className="text-sm font-semibold text-gray-800 mb-1">Score per competentie</h2>
-                <p className="text-xs text-gray-400 mb-4">Geef een score van 0 tot 10 per competentie.</p>
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-100">
-                      <th className="text-left text-xs font-semibold text-gray-600 pb-3">Competentie</th>
-                      <th className="text-center text-xs font-semibold text-gray-600 pb-3 w-28">Score (0-10)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {competenties.map(c => (
-                      <tr key={c.id} className="border-b border-gray-50">
-                        <td className="text-sm text-gray-700 py-3 pr-4">
-                          <span className="font-medium text-[#1e3a5f]">{c.naam.split('.')[0]}.</span> {c.naam.split('.').slice(1).join('.').trim() || c.naam}
-                        </td>
-                        <td className="py-3 w-28">
-                          <input
-                            type="number" min="0" max="10" step="0.5"
-                            className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-400 text-center"
-                            placeholder="0-10"
-                            value={form.scores[c.id] ?? ''}
-                            onChange={e => setForm({ ...form, scores: { ...form.scores, [c.id]: e.target.value } })}
-                          />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+          <div className="bg-white rounded-xl p-5">
+            <h2 className="text-sm font-semibold text-gray-800 mb-1">Te evalueren competenties</h2>
+            <p className="text-xs text-gray-400 mb-4">
+              Scores en feedback vul je in na het aanmaken van de evaluatie.
+            </p>
+            {competenties.length === 0 ? (
+              <p className="text-sm text-gray-400">Geen competenties beschikbaar.</p>
+            ) : (
+              <div className="space-y-2">
+                {competenties.map(c => (
+                  <div key={c.id} className="text-sm text-gray-700 py-2 border-b border-gray-50 last:border-0">
+                    {competentieLabel(c)}
+                  </div>
+                ))}
               </div>
-
-              <div className="bg-white rounded-xl p-5">
-                <h2 className="text-sm font-semibold text-gray-800 mb-1">Algemene feedback</h2>
-                <p className="text-xs text-gray-400 mb-3">Jouw algemene feedback voor de student.</p>
-                <textarea
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400 h-32 resize-none"
-                  placeholder="Algemene feedback voor de student..."
-                  value={form.feedback}
-                  onChange={e => setForm({...form, feedback: e.target.value})}
-                />
-              </div>
-            </>
-          )}
-
-          {isFinaal && (
-            <div className="bg-white rounded-xl p-5">
-              <p className="text-sm text-gray-500">Na het aanmaken kan je de eindpresentatie scores en algemene feedback invullen.</p>
-            </div>
-          )}
+            )}
+          </div>
 
           {fout && (
             <div className="bg-red-50 text-red-600 border border-red-200 rounded-lg p-3 text-sm">{fout}</div>
@@ -226,7 +229,11 @@ export default function NieuweEvaluatiePage() {
               disabled={bezig}
               className="px-5 py-2 text-sm bg-[#1e3a5f] text-white rounded-lg hover:bg-[#162d4a] cursor-pointer font-medium disabled:opacity-50"
             >
-              {bezig ? 'Bezig...' : 'Evaluatie aanmaken'}
+              {bezig
+                ? 'Bezig...'
+                : geselecteerdeStudenten.length > 1
+                  ? `Evaluaties aanmaken (${geselecteerdeStudenten.length})`
+                  : 'Evaluatie aanmaken'}
             </button>
           </div>
 
