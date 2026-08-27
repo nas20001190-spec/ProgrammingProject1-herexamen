@@ -5,6 +5,13 @@ import { useRouter, useParams } from 'next/navigation'
 import Topbar from '../../component/topbar'
 import { fetchMetAuth } from '@/app/lib/fetchMetAuth'
 
+function fmtScore(score) {
+  if (score === null || score === undefined || score === "") return "—";
+  const n = parseFloat(score);
+  if (isNaN(n)) return "—";
+  return n % 1 === 0 ? n.toString() : n.toFixed(1);
+}
+
 export default function StudentEvaluatieDetail() {
   const router = useRouter()
   const { id } = useParams()
@@ -115,13 +122,13 @@ export default function StudentEvaluatieDetail() {
                   {s.score_mentor !== null && (
                     <div className="bg-gray-50 rounded-lg px-3 py-2 text-xs">
                       <span className="text-gray-400">Mentor: </span>
-                      <span className="font-semibold text-[#1e3a5f]">{s.score_mentor}/{s.score_max_mentor}</span>
+                      <span className="font-semibold text-[#1e3a5f]">{fmtScore(s.score_mentor)}/{fmtScore(s.score_max_mentor)}</span>
                     </div>
                   )}
                   {s.score_docent !== null && (
                     <div className="bg-gray-50 rounded-lg px-3 py-2 text-xs">
                       <span className="text-gray-400">Docent: </span>
-                      <span className="font-semibold text-[#1e3a5f]">{s.score_docent}/{s.score_max_docent}</span>
+                      <span className="font-semibold text-[#1e3a5f]">{fmtScore(s.score_docent)}/{fmtScore(s.score_max_docent)}</span>
                     </div>
                   )}
                 </div>

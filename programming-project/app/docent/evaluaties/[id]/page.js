@@ -5,6 +5,13 @@ import { useRouter, useParams } from "next/navigation";
 import DocentTopbar from "../../component/topbar";
 import { fetchMetAuth } from "@/app/lib/fetchMetAuth";
 
+function fmtScore(score) {
+  if (score === null || score === undefined || score === "") return "—";
+  const n = parseFloat(score);
+  if (isNaN(n)) return "—";
+  return n % 1 === 0 ? n.toString() : n.toFixed(1);
+}
+
 export default function DocentEvaluatieDetail() {
   const router = useRouter();
   const { id } = useParams();
@@ -183,13 +190,13 @@ export default function DocentEvaluatieDetail() {
                     <div className="text-xs text-gray-500">
                       Mentor:{" "}
                       <span className="font-semibold text-gray-700">
-                        {s.score_mentor ?? "—"}
+                        {fmtScore(s.score_mentor)}
                       </span>
                     </div>
                     <div className="text-xs text-gray-500">
                       Docent:{" "}
                       <span className="font-semibold text-gray-700">
-                        {s.score_docent ?? "—"}
+                        {fmtScore(s.score_docent)}
                       </span>
                     </div>
                   </div>
@@ -215,7 +222,7 @@ export default function DocentEvaluatieDetail() {
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-gray-400">Mentor score:</span>
                     <span className="text-xs font-semibold text-gray-600">
-                      {s.score_mentor ?? "—"}
+                      {fmtScore(s.score_mentor)}
                     </span>
                   </div>
                 </div>
@@ -247,7 +254,7 @@ export default function DocentEvaluatieDetail() {
                           <div
                             className={`text-sm font-bold mb-1 ${geselecteerd ? "text-white" : "text-[#1e3a5f]"}`}
                           >
-                            {niveau.score}/{niveau.score_max}
+                            {fmtScore(niveau.score)}/{fmtScore(niveau.score_max)}
                           </div>
                           <div
                             className={`text-xs leading-relaxed ${geselecteerd ? "text-blue-100" : "text-gray-500"}`}
@@ -283,7 +290,7 @@ export default function DocentEvaluatieDetail() {
                   <div className="mt-2 text-xs text-gray-500">
                     Geselecteerde score:{" "}
                     <span className="font-semibold text-[#1e3a5f]">
-                      {s.score_docent}
+                      {fmtScore(s.score_docent)}
                     </span>
                   </div>
                 )}
@@ -343,7 +350,7 @@ export default function DocentEvaluatieDetail() {
                     </div>
                     {c.score !== null && c.score !== "" && (
                       <span className="text-xs font-semibold text-[#1e3a5f]">
-                        Score: {c.score}
+                        Score: {fmtScore(c.score)}
                       </span>
                     )}
                   </div>
@@ -375,7 +382,7 @@ export default function DocentEvaluatieDetail() {
                             <div
                               className={`text-sm font-bold mb-1 ${geselecteerd ? "text-white" : "text-[#1e3a5f]"}`}
                             >
-                              {niveau.score}/{niveau.score_max}
+                              {fmtScore(niveau.score)}/{fmtScore(niveau.score_max)}
                             </div>
                             <div
                               className={`text-xs leading-relaxed ${geselecteerd ? "text-blue-100" : "text-gray-500"}`}
