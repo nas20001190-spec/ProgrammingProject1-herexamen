@@ -61,13 +61,20 @@ export async function POST(request) {
 
     const payload = auth.payload;
     const body = await request.json();
-    const { stage_id, type, datum, feedback } = body;
+    const { stage_id, type, datum, feedback, presentatie_datum } = body;
+
+    if (type === "finaal" && !presentatie_datum) {
+      return NextResponse.json(
+        { fout: "Presentatiedatum is verplicht voor een finale evaluatie." },
+        { status: 400 },
+      );
+    }
 
     const [evaluatieResult] = await db.query(
       `INSERT INTO evaluatie 
-        (stage_id, beoordelaar_id, type, status, algemene_feedback_docent, datum)
-       VALUES (?, ?, ?, 'open', ?, ?)`,
-      [stage_id, payload.id, type, feedback || null, datum],
+        (stage_id, beoordelaar_id, type, status, algemene_feedback_docent, datum, presentatie_datum)
+       VALUES (?, ?, ?, 'open', ?, ?, ?)`,
+      [stage_id, payload.id, type, feedback || null, datum, presentatie_datum || null],
     );
     const evaluatie_id = evaluatieResult.insertId;
 
@@ -117,7 +124,7 @@ export async function PUT(request) {
       `UPDATE evaluatie SET 
         algemene_feedback_docent=?,
         status=?,
-        presentatie_datum=?,
+        presentatie_datum=COALESCE(?, presentatie_datum),
         presentatie_notities=?,
         presentatie_score=?
        WHERE id=?`,
