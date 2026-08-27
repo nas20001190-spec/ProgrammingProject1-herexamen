@@ -14,6 +14,8 @@ export default function CommissieStageDetailPage() {
   const [status, setStatus] = useState("");
   const [feedback, setFeedback] = useState("");
   const [stage, setStage] = useState(null);
+  const [docenten, setDocenten] = useState([]);
+  const [docentId, setDocentId] = useState("");
 
   useEffect(() => {
     if (!id) return;
@@ -24,16 +26,27 @@ export default function CommissieStageDetailPage() {
           setStage(data);
           setStatus(data.status || "");
           setFeedback(data.feedback_commissie || "");
+          setDocentId(data.docent_id ?? "");
         }
         setLoading(false);
       })
       .catch(() => setLoading(false));
+
+    fetchMetAuth('/api/admin/docenten')
+      .then((res) => res?.json())
+      .then((data) => { if (Array.isArray(data)) setDocenten(data); })
+      .catch(() => {});
   }, [id]);
 
   const isGesloten =
     status === "goedgekeurd" || status === "actief" || status === "afgekeurd";
 
   const verstuur = async (nieuweStatus) => {
+    if (nieuweStatus === "goedgekeurd" && !docentId) {
+      alert("Selecteer eerst een docent voor je deze stage goedkeurt.");
+      return;
+    }
+
     const teksten = {
       goedgekeurd: "Weet u zeker dat u deze stage wilt goedkeuren?",
       aanpassingen: "Aanpassingen vereist versturen?",
@@ -47,6 +60,7 @@ export default function CommissieStageDetailPage() {
       body: JSON.stringify({
         status: nieuweStatus,
         feedback_commissie: feedback,
+        docent_id: docentId || null,
       }),
     });
     if (!response) {
@@ -181,6 +195,30 @@ export default function CommissieStageDetailPage() {
           </div>
 
           <div className="w-72 flex flex-col gap-6">
+            {!isGesloten && (
+              <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+                <h3 className="text-sm font-bold text-gray-900 mb-1">Docent</h3>
+                <p className="text-xs text-gray-400 mb-4">
+                  Verplicht voor je een stage goedkeurt.
+                </p>
+                <label className="text-xs text-gray-400 block mb-1">
+                  Docent voor deze stage
+                </label>
+                <select
+                  value={docentId}
+                  onChange={(e) => setDocentId(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#1A2E4A] focus:border-transparent"
+                >
+                  <option value="">Selecteer docent</option>
+                  {docenten.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.voornaam} {d.achternaam}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             {!isGesloten ? (
               <div className="bg-orange-50 rounded-xl border border-orange-100 p-5">
                 <h3 className="text-sm font-bold text-gray-900 mb-1">
@@ -205,7 +243,7 @@ export default function CommissieStageDetailPage() {
                 <div className="flex flex-col gap-2">
                   <button
                     onClick={() => verstuur("goedgekeurd")}
-                    disabled={bezig || feedback.trim().length > 0}
+                    disabled={bezig || feedback.trim().length > 0 || !docentId}
                     className="w-full py-2.5 rounded-lg text-sm font-medium text-white bg-[#065F46] hover:bg-[#054F3B] disabled:opacity-50 transition-colors"
                   >
                     Goedkeuren

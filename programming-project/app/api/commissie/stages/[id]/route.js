@@ -94,26 +94,6 @@ export async function PUT(request, { params }) {
             feedback: feedback_commissie,
           })
         })
-
-        if (status === 'goedgekeurd') {
-          const code = genereerCode()
-          const verloopt = new Date(Date.now() + 24 * 60 * 60 * 1000)
-
-          await db.query(
-            'UPDATE user SET reset_code = ?, reset_code_expiry = ? WHERE id = ?',
-            [code, verloopt, stage.mentor_user_id]
-          )
-
-          await stuurMail({
-            naar: stage.mentor_email,
-            onderwerp: 'Welkom bij Competent — Activeer je account',
-            html: stagementorUitnodigingTemplate({
-              naam: stage.mentor_voornaam,
-              code,
-              link: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/authentificator/first-time`
-            })
-          })
-        }
       } catch (mailError) {
         console.error('Mail mislukt:', mailError)
       }

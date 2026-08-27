@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import db from '@/app/lib/db'
 import { verifyToken, checkRol } from '@/app/lib/auth'
 import { stuurMail } from '@/app/lib/mailer'
+import { stagementorUitnodigingTemplate } from '@/app/lib/emailTemplates'
 
 export async function GET(request, { params }) {
   try {
@@ -84,7 +85,7 @@ export async function PUT(request, { params }) {
         }
       }
 
-      // mail naar stagementor
+            // mail naar stagementor
       try {
         const code = Math.floor(100000 + Math.random() * 900000).toString()
         const vervalt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
@@ -93,11 +94,11 @@ export async function PUT(request, { params }) {
         await stuurMail({
           naar: stage.mentor_email_huidig,
           onderwerp: 'Welkom bij Competent — Activeer je account',
-          html: `<p>Beste ${stage.mentor_voornaam},</p>
-                 <p>Een student heeft je stage geaccepteerd. Activeer je account met deze code:</p>
-                 <p style="font-size:24px;font-weight:bold;letter-spacing:3px;">${code}</p>
-                 <p><a href="${link}">${link}</a></p>
-                 <p>Deze code is 7 dagen geldig.</p>`
+          html: stagementorUitnodigingTemplate({
+            naam: stage.mentor_voornaam,
+            code,
+            link,
+          })
         })
       } catch (mailError) {
         console.error('Mail mislukt:', mailError)

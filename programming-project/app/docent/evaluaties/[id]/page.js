@@ -5,6 +5,13 @@ import { useRouter, useParams } from "next/navigation";
 import DocentTopbar from "../../component/topbar";
 import { fetchMetAuth } from "@/app/lib/fetchMetAuth";
 
+function fmtScore(score) {
+  if (score === null || score === undefined || score === "") return "—";
+  const n = parseFloat(score);
+  if (isNaN(n)) return "—";
+  return n % 1 === 0 ? n.toString() : n.toFixed(1);
+}
+
 export default function DocentEvaluatieDetail() {
   const router = useRouter();
   const { id } = useParams();
@@ -36,7 +43,6 @@ export default function DocentEvaluatieDetail() {
   }, [id]);
 
   const selecteerScore = (competentie_id, score) => {
-    if (evaluatie.type === "finaal") return;
     setScores((prev) =>
       prev.map((s) =>
         s.competentie_id === competentie_id ? { ...s, score_docent: score } : s,
@@ -161,137 +167,6 @@ export default function DocentEvaluatieDetail() {
           </div>
         )}
 
-        {/* Scores per competentie */}
-        {isFinaal && (
-          <div className="bg-white rounded-xl p-4 border border-gray-100">
-            <p className="text-xs font-semibold text-gray-400 mb-3">
-              Tussentijdse scores (ter info)
-            </p>
-            <div className="space-y-2">
-              {scores.map((s) => (
-                <div
-                  key={s.competentie_id}
-                  className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0"
-                >
-                  <div>
-                    <p className="text-xs font-medium text-gray-700">
-                      {s.competentie_naam}
-                    </p>
-                    <p className="text-xs text-gray-400">{s.omschrijving}</p>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-xs text-gray-500">
-                      Mentor:{" "}
-                      <span className="font-semibold text-gray-700">
-                        {s.score_mentor ?? "—"}
-                      </span>
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      Docent:{" "}
-                      <span className="font-semibold text-gray-700">
-                        {s.score_docent ?? "—"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {!isFinaal && (
-          <div className="space-y-4">
-            {scores.map((s) => (
-              <div key={s.competentie_id} className="bg-white rounded-xl p-5">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900">
-                      {s.competentie_naam}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      {s.omschrijving}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-400">Mentor score:</span>
-                    <span className="text-xs font-semibold text-gray-600">
-                      {s.score_mentor ?? "—"}
-                    </span>
-                  </div>
-                </div>
-
-                {s.rubriek.length > 0 ? (
-                  <div
-                    className="grid gap-2"
-                    style={{
-                      gridTemplateColumns: `repeat(${s.rubriek.length}, 1fr)`,
-                    }}
-                  >
-                    {s.rubriek.map((niveau) => {
-                      const geselecteerd =
-                        parseFloat(s.score_docent) === parseFloat(niveau.score);
-                      return (
-                        <button
-                          key={niveau.id}
-                          type="button"
-                          disabled={isVerlopen}
-                          onClick={() =>
-                            selecteerScore(s.competentie_id, niveau.score)
-                          }
-                          className={`text-left p-3 rounded-lg border-2 transition-all cursor-pointer ${
-                            geselecteerd
-                              ? "border-[#1e3a5f] bg-[#1e3a5f] text-white"
-                              : "border-gray-200 bg-gray-50 text-gray-700 hover:border-[#1e3a5f] hover:bg-blue-50"
-                          } ${isVerlopen ? "cursor-not-allowed opacity-60" : ""}`}
-                        >
-                          <div
-                            className={`text-sm font-bold mb-1 ${geselecteerd ? "text-white" : "text-[#1e3a5f]"}`}
-                          >
-                            {niveau.score}/{niveau.score_max}
-                          </div>
-                          <div
-                            className={`text-xs leading-relaxed ${geselecteerd ? "text-blue-100" : "text-gray-500"}`}
-                          >
-                            {niveau.beschrijving}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-3">
-                    <p className="text-xs text-gray-400">
-                      Geen rubriek beschikbaar — geef een score:
-                    </p>
-                    <input
-                      type="number"
-                      min="0"
-                      max="10"
-                      step="0.5"
-                      disabled={isVerlopen}
-                      className="w-24 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-400 text-center"
-                      placeholder="0-10"
-                      value={s.score_docent ?? ""}
-                      onChange={(e) =>
-                        selecteerScore(s.competentie_id, e.target.value)
-                      }
-                    />
-                  </div>
-                )}
-
-                {s.score_docent !== null && s.score_docent !== "" && (
-                  <div className="mt-2 text-xs text-gray-500">
-                    Geselecteerde score:{" "}
-                    <span className="font-semibold text-[#1e3a5f]">
-                      {s.score_docent}
-                    </span>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
         {/* Eindpresentatie rubriek — alleen bij finaal */}
         {isFinaal && (
           <div className="bg-white rounded-xl p-5">
@@ -343,7 +218,7 @@ export default function DocentEvaluatieDetail() {
                     </div>
                     {c.score !== null && c.score !== "" && (
                       <span className="text-xs font-semibold text-[#1e3a5f]">
-                        Score: {c.score}
+                        Score: {fmtScore(c.score)}
                       </span>
                     )}
                   </div>
@@ -375,7 +250,7 @@ export default function DocentEvaluatieDetail() {
                             <div
                               className={`text-sm font-bold mb-1 ${geselecteerd ? "text-white" : "text-[#1e3a5f]"}`}
                             >
-                              {niveau.score}/{niveau.score_max}
+                              {fmtScore(niveau.score)}/{fmtScore(niveau.score_max)}
                             </div>
                             <div
                               className={`text-xs leading-relaxed ${geselecteerd ? "text-blue-100" : "text-gray-500"}`}
@@ -411,6 +286,103 @@ export default function DocentEvaluatieDetail() {
           </div>
         )}
 
+        {/* Scores per competentie — geldt voor beide types, gelabeld naargelang type */}
+        <div>
+          <h2 className="text-sm font-semibold text-gray-800 mb-3 px-1">
+            {isFinaal ? "Finale score op competenties" : "Score per competentie"}
+          </h2>
+          <div className="space-y-4">
+            {scores.map((s) => (
+              <div key={s.competentie_id} className="bg-white rounded-xl p-5">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {s.competentie_naam}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {s.omschrijving}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-400">Mentor score:</span>
+                    <span className="text-xs font-semibold text-gray-600">
+                      {fmtScore(s.score_mentor)}
+                    </span>
+                  </div>
+                </div>
+
+                {s.rubriek.length > 0 ? (
+                  <div
+                    className="grid gap-2"
+                    style={{
+                      gridTemplateColumns: `repeat(${s.rubriek.length}, 1fr)`,
+                    }}
+                  >
+                    {s.rubriek.map((niveau) => {
+                      const geselecteerd =
+                        parseFloat(s.score_docent) === parseFloat(niveau.score);
+                      return (
+                        <button
+                          key={niveau.id}
+                          type="button"
+                          disabled={isVerlopen}
+                          onClick={() =>
+                            selecteerScore(s.competentie_id, niveau.score)
+                          }
+                          className={`text-left p-3 rounded-lg border-2 transition-all cursor-pointer ${
+                            geselecteerd
+                              ? "border-[#1e3a5f] bg-[#1e3a5f] text-white"
+                              : "border-gray-200 bg-gray-50 text-gray-700 hover:border-[#1e3a5f] hover:bg-blue-50"
+                          } ${isVerlopen ? "cursor-not-allowed opacity-60" : ""}`}
+                        >
+                          <div
+                            className={`text-sm font-bold mb-1 ${geselecteerd ? "text-white" : "text-[#1e3a5f]"}`}
+                          >
+                            {fmtScore(niveau.score)}/{fmtScore(niveau.score_max)}
+                          </div>
+                          <div
+                            className={`text-xs leading-relaxed ${geselecteerd ? "text-blue-100" : "text-gray-500"}`}
+                          >
+                            {niveau.beschrijving}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <p className="text-xs text-gray-400">
+                      Geen rubriek beschikbaar — geef een score:
+                    </p>
+                    <input
+                      type="number"
+                      min="0"
+                      max="10"
+                      step="0.5"
+                      disabled={isVerlopen}
+                      className="w-24 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-400 text-center"
+                      placeholder="0-10"
+                      value={s.score_docent ?? ""}
+                      onChange={(e) =>
+                        selecteerScore(s.competentie_id, e.target.value)
+                      }
+                    />
+                  </div>
+                )}
+
+                {s.score_docent !== null && s.score_docent !== "" && (
+                  <div className="mt-2 text-xs text-gray-500">
+                    Geselecteerde score:{" "}
+                    <span className="font-semibold text-[#1e3a5f]">
+                      {fmtScore(s.score_docent)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Algemene feedback */}
         <div className="bg-white rounded-xl p-5">
           <h2 className="text-sm font-semibold text-gray-800 mb-1">
@@ -434,13 +406,21 @@ export default function DocentEvaluatieDetail() {
           </div>
         )}
 
-        <div className="flex gap-3 pb-6">
+                <div className="flex gap-3 pb-6">
           <button
             onClick={() => router.push("/docent/evaluaties")}
             className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
           >
             Annuleren
           </button>
+          {isFinaal && (
+            <button
+              onClick={() => window.open(`/api/admin/evaluaties/${id}/pdf`, '_blank')}
+              className="px-4 py-2 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
+            >
+              PDF downloaden
+            </button>
+          )}
           <button
             onClick={handleOpslaan}
             disabled={bezig || isVerlopen}

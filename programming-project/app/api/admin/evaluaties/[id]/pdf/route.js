@@ -5,6 +5,13 @@ import puppeteer from "puppeteer";
 
 let browserInstance = null;
 
+function fmtScore(score) {
+  if (score === null || score === undefined || score === "") return "—";
+  const n = parseFloat(score);
+  if (isNaN(n)) return "—";
+  return n % 1 === 0 ? n.toString() : n.toFixed(1);
+}
+
 async function getBrowser() {
   if (!browserInstance) {
     browserInstance = await puppeteer.launch({
@@ -30,7 +37,7 @@ export async function GET(request, { params }) {
       return NextResponse.json({ fout: "Geen token" }, { status: 401 });
 
     const payload = jwt.verify(token, process.env.JWT_SECRET);
-    if (payload.rol !== "admin")
+    if (!["admin", "docent", "student"].includes(payload.rol))
       return NextResponse.json({ fout: "Geen toegang" }, { status: 403 });
 
     const { id } = await params;
@@ -60,13 +67,20 @@ export async function GET(request, { params }) {
       [id],
     );
 
-    if (evalRijen.length === 0)
+        if (evalRijen.length === 0)
       return NextResponse.json(
         { fout: "Evaluatie niet gevonden" },
         { status: 404 },
       );
 
     const evaluatie = evalRijen[0];
+
+    if (evaluatie.type !== "finaal") {
+      return NextResponse.json(
+        { fout: "Enkel finale evaluaties kunnen als PDF gedownload worden." },
+        { status: 400 },
+      );
+    }
 
     const [scoreRijen] = await db.query(
       `
@@ -218,8 +232,8 @@ export async function GET(request, { params }) {
         <div class="comp-header">
           <div class="comp-naam">${s.competentie_naam}</div>
           <div class="comp-scores">
-            <span class="score-badge mentor">Mentor: ${s.score_mentor !== null && s.score_mentor !== "" ? s.score_mentor + "/" + (scoreMaxMentor[s.competentie_id] || 4) : "—"}</span>
-            <span class="score-badge docent">Docent: ${s.score_docent !== null && s.score_docent !== "" ? s.score_docent + "/" + (scoreMaxDocent[s.competentie_id] || 10) : "—"}</span>
+            <span class="score-badge mentor">Mentor: ${s.score_mentor !== null && s.score_mentor !== "" ? fmtScore(s.score_mentor) + "/" + fmtScore(scoreMaxMentor[s.competentie_id] || 4) : "—"}</span>
+            <span class="score-badge docent">Docent: ${s.score_docent !== null && s.score_docent !== "" ? fmtScore(s.score_docent) + "/" + fmtScore(scoreMaxDocent[s.competentie_id] || 10) : "—"}</span>
           </div>
         </div>
         <p class="comp-omschrijving">${s.omschrijving || ""}</p>
@@ -267,7 +281,7 @@ export async function GET(request, { params }) {
           <div class="competentie-blok">
             <div class="comp-header">
               <div class="comp-naam">${ps.naam}</div>
-              <span class="score-badge docent">${ps.score !== null ? ps.score + "/" + (ps.score_max || 10) : "—"}</span>
+              <span class="score-badge docent">${ps.score !== null ? fmtScore(ps.score) + "/" + fmtScore(ps.score_max || 10) : "—"}</span>
             </div>
           </div>
         `,
@@ -340,7 +354,7 @@ export async function GET(request, { params }) {
   <div class="eindnota-blok">
     <div>
       <div class="eindnota-label">Eindnota</div>
-      <div class="eindnota-sub">Mentor ${pondering.mentor_gewicht}% · Docent ${pondering.docent_gewicht}%${evaluatie.type === "finaal" ? ` · Presentatie ${pondering.presentatie_gewicht}%` : ""}</div>
+      <div class="eindnota-sub">Mentor ${fmtScore(pondering.mentor_gewicht)}% · Docent ${fmtScore(pondering.docent_gewicht)}%${evaluatie.type === "finaal" ? ` · Presentatie ${fmtScore(pondering.presentatie_gewicht)}%` : ""}</div>
     </div>
     <div class="eindnota-score">${eindnota.toFixed(1)}<span style="font-size:16px;color:#555">/20</span></div>
   </div>
@@ -376,8 +390,8 @@ export async function GET(request, { params }) {
               <strong>${s.competentie_naam}</strong><br>
               <span style="font-size:10px;color:#555;">${s.omschrijving || ""}</span>
             </td>
-            <td>${s.score_mentor !== null && s.score_mentor !== "" ? s.score_mentor + "/" + (scoreMaxMentor[s.competentie_id] || 4) : "—"}</td>
-            <td>${s.score_docent !== null && s.score_docent !== "" ? s.score_docent + "/" + (scoreMaxDocent[s.competentie_id] || 10) : "—"}</td>
+            <td>${s.score_mentor !== null && s.score_mentor !== "" ? fmtScore(s.score_mentor) + "/" + fmtScore(scoreMaxMentor[s.competentie_id] || 4) : "—"}</td>
+            <td>${s.score_docent !== null && s.score_docent !== "" ? fmtScore(s.score_docent) + "/" + fmtScore(scoreMaxDocent[s.competentie_id] || 10) : "—"}</td>
             <td style="font-size:10px;">${s.zelfreflectie_student || "—"}</td>
           </tr>
           ${
@@ -418,7 +432,7 @@ export async function GET(request, { params }) {
             (ps) => `
           <tr>
             <td><strong>${ps.naam}</strong></td>
-            <td>${ps.score !== null ? ps.score + "/" + (ps.score_max || 10) : "—"}</td>
+            <td>${ps.score !== null ? fmtScore(ps.score) + "/" + fmtScore(ps.score_max || 10) : "—"}</td>
             <td style="font-size:10px;color:#555;">${ps.omschrijving || ""}</td>
           </tr>
         `,

@@ -5,6 +5,13 @@ import { useRouter, useParams } from 'next/navigation'
 import Topbar from '../../component/topbar'
 import { fetchMetAuth } from '@/app/lib/fetchMetAuth'
 
+function fmtScore(score) {
+  if (score === null || score === undefined || score === "") return "—";
+  const n = parseFloat(score);
+  if (isNaN(n)) return "—";
+  return n % 1 === 0 ? n.toString() : n.toFixed(1);
+}
+
 export default function StagementorEvaluatieDetail() {
   const router = useRouter()
   const { id } = useParams()
@@ -124,7 +131,7 @@ export default function StagementorEvaluatieDetail() {
                 {s.score_docent !== null && (
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-gray-400">Docent score:</span>
-                    <span className="text-xs font-semibold text-gray-600">{s.score_docent}</span>
+                    <span className="text-xs font-semibold text-gray-600">{fmtScore(s.score_docent)}</span>
                   </div>
                 )}
               </div>
@@ -154,7 +161,7 @@ export default function StagementorEvaluatieDetail() {
                         } ${isVerlopen ? 'cursor-not-allowed opacity-60' : ''}`}
                       >
                         <div className={`text-sm font-bold mb-1 ${geselecteerd ? 'text-white' : 'text-[#1e3a5f]'}`}>
-                          {niveau.score}/{niveau.score_max}
+                          {fmtScore(niveau.score)}/{fmtScore(niveau.score_max)}
                         </div>
                         <div className={`text-xs leading-relaxed ${geselecteerd ? 'text-blue-100' : 'text-gray-500'}`}>
                           {niveau.beschrijving}
@@ -165,11 +172,12 @@ export default function StagementorEvaluatieDetail() {
                 </div>
               ) : (
                 <div className="flex items-center gap-3 mb-3">
-                  <p className="text-xs text-gray-400">Geen rubriek — geef een score (1-4):</p>
+                  <p className="text-xs text-gray-400">Geen rubriek — geef een score (0-10):</p>
                   <input
                     type="number"
-                    min="1"
-                    max="4"
+                    min="0"
+                    max="10"
+                    step="0.5"
                     disabled={isVerlopen}
                     className="w-20 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-400 text-center"
                     value={s.score_mentor ?? ''}
@@ -180,7 +188,7 @@ export default function StagementorEvaluatieDetail() {
 
               {s.score_mentor !== null && s.score_mentor !== '' && (
                 <div className="mb-3 text-xs text-gray-500">
-                  Geselecteerde score: <span className="font-semibold text-[#1e3a5f]">{s.score_mentor}/4</span>
+                  Geselecteerde score: <span className="font-semibold text-[#1e3a5f]">{fmtScore(s.score_mentor)}/10</span>
                 </div>
               )}
 

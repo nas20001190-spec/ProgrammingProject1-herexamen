@@ -61,23 +61,59 @@ export async function POST(request) {
 
     const payload = auth.payload;
     const body = await request.json();
-    const { stage_id, type, datum, feedback } = body;
+    const { stage_id, type, datum, feedback, presentatie_datum } = body;
+
+    if (type === "finaal" && !presentatie_datum) {
+      return NextResponse.json(
+        { fout: "Presentatiedatum is verplicht voor een finale evaluatie." },
+        { status: 400 },
+      );
+    }
 
     const [evaluatieResult] = await db.query(
       `INSERT INTO evaluatie 
-        (stage_id, beoordelaar_id, type, status, algemene_feedback_docent, datum)
-       VALUES (?, ?, ?, 'open', ?, ?)`,
-      [stage_id, payload.id, type, feedback || null, datum],
+        (stage_id, beoordelaar_id, type, status, algemene_feedback_docent, datum, presentatie_datum)
+       VALUES (?, ?, ?, 'open', ?, ?, ?)`,
+      [stage_id, payload.id, type, feedback || null, datum, presentatie_datum || null],
     );
     const evaluatie_id = evaluatieResult.insertId;
 
     const [competenties] = await db.query(
       "SELECT id FROM competentie ORDER BY id ASC",
     );
+
+    let vorigeScores = {};
+    if (type === "finaal") {
+      const [vorigeRijen] = await db.query(
+        `SELECT es.competentie_id, es.score_docent, es.score_mentor, es.feedback_mentor
+         FROM evaluatie_score es
+         JOIN evaluatie e ON es.evaluatie_id = e.id
+         WHERE e.stage_id = ? AND e.type = 'tussentijds'
+         ORDER BY e.id DESC`,
+        [stage_id],
+      );
+      for (const rij of vorigeRijen) {
+        if (!(rij.competentie_id in vorigeScores)) {
+          vorigeScores[rij.competentie_id] = {
+            score_docent: rij.score_docent,
+            score_mentor: rij.score_mentor,
+            feedback_mentor: rij.feedback_mentor,
+          };
+        }
+      }
+    }
+
     for (const c of competenties) {
+      const vorige = vorigeScores[c.id];
       await db.query(
-        "INSERT INTO evaluatie_score (evaluatie_id, competentie_id) VALUES (?, ?)",
-        [evaluatie_id, c.id],
+        "INSERT INTO evaluatie_score (evaluatie_id, competentie_id, score_docent, score_mentor, feedback_mentor) VALUES (?, ?, ?, ?, ?)",
+        [
+          evaluatie_id,
+          c.id,
+          vorige?.score_docent ?? null,
+          vorige?.score_mentor ?? null,
+          vorige?.feedback_mentor ?? null,
+        ],
       );
     }
 
@@ -117,7 +153,7 @@ export async function PUT(request) {
       `UPDATE evaluatie SET 
         algemene_feedback_docent=?,
         status=?,
-        presentatie_datum=?,
+        presentatie_datum=COALESCE(?, presentatie_datum),
         presentatie_notities=?,
         presentatie_score=?
        WHERE id=?`,

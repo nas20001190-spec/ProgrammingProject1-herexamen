@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Topbar from "../component/topbar";
@@ -35,7 +36,7 @@ export default function CompetentiesPage() {
   };
 
   const totaalGewicht = competenties.reduce(
-    (acc, c) => acc + (c.gewicht || 0),
+    (acc, c) => acc + (parseFloat(c.gewicht) || 0),
     0,
   );
 
@@ -46,16 +47,6 @@ export default function CompetentiesPage() {
     }
 
     const nieuwGewicht = parseFloat(form.gewicht);
-    const huidigTotaal = competenties
-      .filter((c) => c.id !== bewerkId)
-      .reduce((acc, c) => acc + (c.gewicht || 0), 0);
-
-    if (huidigTotaal + nieuwGewicht > 100) {
-      alert(
-        `Het totale gewicht mag niet meer dan 100% zijn.\nHuidig totaal zonder deze competentie: ${huidigTotaal.toFixed(2)}%.\nMaximaal nog beschikbaar: ${(100 - huidigTotaal).toFixed(2)}%.`,
-      );
-      return;
-    }
 
     const response = await fetchMetAuth("/api/competenties", {
       method: bewerkId ? "PUT" : "POST",
@@ -79,8 +70,9 @@ export default function CompetentiesPage() {
     }
   };
 
-  const handleBewerken = (c) => {
-    setBewerkId(c.id);
+  const handleBewerken = (e, c) => {
+    e.preventDefault();
+    setBewerkId(bewerkId === c.id ? null : c.id);
     setNieuwFormulier(false);
     setForm({
       naam: c.naam,
@@ -96,7 +88,7 @@ export default function CompetentiesPage() {
       body: JSON.stringify({ id }),
     });
     if (response?.ok) {
-      setCompetenties((prev) => prev.filter((c) => c.id !== id));
+      laadCompetenties();
     }
   };
 
@@ -108,6 +100,72 @@ export default function CompetentiesPage() {
 
   const inputClass =
     "w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#1A2E4A] focus:border-transparent";
+
+  const bewerkFormulier = (
+    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-6">
+      <h3 className="text-sm font-semibold text-gray-900 mb-4">
+        {bewerkId ? "Competentie bewerken" : "Nieuwe competentie"}
+      </h3>
+      <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+        <div className="col-span-2">
+          <label className="text-xs text-gray-400 block mb-1">Naam *</label>
+          <input
+            type="text"
+            value={form.naam}
+            onChange={(e) => setForm({ ...form, naam: e.target.value })}
+            placeholder="bv. D1. Projectplanning"
+            className={inputClass}
+          />
+        </div>
+        <div className="col-span-2">
+          <label className="text-xs text-gray-400 block mb-1">Omschrijving</label>
+          <textarea
+            value={form.omschrijving}
+            onChange={(e) => setForm({ ...form, omschrijving: e.target.value })}
+            placeholder="Beschrijving van de competentie..."
+            rows={2}
+            className={`${inputClass} resize-none`}
+          />
+        </div>
+        <div>
+          <label className="text-xs text-gray-400 block mb-1">
+            Gewicht (%) *
+          </label>
+          <p className="text-xs text-gray-400 mb-1">
+            Bij wijziging worden de gewichten van de andere competenties automatisch herverdeeld tot 100%.
+          </p>
+          <input
+            type="number"
+            min="0"
+            max="100"
+            step="0.1"
+            value={form.gewicht}
+            onChange={(e) => setForm({ ...form, gewicht: e.target.value })}
+            placeholder="bv. 20"
+            className={inputClass}
+          />
+        </div>
+      </div>
+      <div className="flex gap-3 mt-4">
+        <button
+          type="button"
+          onClick={handleOpslaan}
+          className="flex items-center gap-2 bg-[#1A2E4A] text-white text-sm px-4 py-2 rounded-lg font-medium hover:bg-[#152438]"
+        >
+          <Check size={16} />
+          Opslaan
+        </button>
+        <button
+          type="button"
+          onClick={handleAnnuleren}
+          className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 text-sm px-4 py-2 rounded-lg font-medium hover:bg-gray-50"
+        >
+          <X size={16} />
+          Annuleren
+        </button>
+      </div>
+    </div>
+  );
 
   if (loading)
     return (
@@ -131,6 +189,7 @@ export default function CompetentiesPage() {
             </p>
           </div>
           <button
+            type="button"
             onClick={() => {
               setNieuwFormulier(true);
               setBewerkId(null);
@@ -143,75 +202,7 @@ export default function CompetentiesPage() {
           </button>
         </div>
 
-        {(nieuwFormulier || bewerkId) && (
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-6">
-            <h3 className="text-sm font-semibold text-gray-900 mb-4">
-              {bewerkId ? "Competentie bewerken" : "Nieuwe competentie"}
-            </h3>
-            <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-              <div className="col-span-2">
-                <label className="text-xs text-gray-400 block mb-1">Naam *</label>
-                <input
-                  type="text"
-                  value={form.naam}
-                  onChange={(e) => setForm({ ...form, naam: e.target.value })}
-                  placeholder="bv. D1. Projectplanning"
-                  className={inputClass}
-                />
-              </div>
-              <div className="col-span-2">
-                <label className="text-xs text-gray-400 block mb-1">Omschrijving</label>
-                <textarea
-                  value={form.omschrijving}
-                  onChange={(e) => setForm({ ...form, omschrijving: e.target.value })}
-                  placeholder="Beschrijving van de competentie..."
-                  rows={2}
-                  className={`${inputClass} resize-none`}
-                />
-              </div>
-              <div>
-                <label className="text-xs text-gray-400 block mb-1">
-                  Gewicht (%) * — nog beschikbaar:{" "}
-                  <span className="font-semibold">
-                    {(
-                      100 -
-                      totaalGewicht +
-                      (bewerkId
-                        ? competenties.find((c) => c.id === bewerkId)?.gewicht || 0
-                        : 0)
-                    ).toFixed(2)}%
-                  </span>
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.1"
-                  value={form.gewicht}
-                  onChange={(e) => setForm({ ...form, gewicht: e.target.value })}
-                  placeholder="bv. 20"
-                  className={inputClass}
-                />
-              </div>
-            </div>
-            <div className="flex gap-3 mt-4">
-              <button
-                onClick={handleOpslaan}
-                className="flex items-center gap-2 bg-[#1A2E4A] text-white text-sm px-4 py-2 rounded-lg font-medium hover:bg-[#152438]"
-              >
-                <Check size={16} />
-                Opslaan
-              </button>
-              <button
-                onClick={handleAnnuleren}
-                className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 text-sm px-4 py-2 rounded-lg font-medium hover:bg-gray-50"
-              >
-                <X size={16} />
-                Annuleren
-              </button>
-            </div>
-          </div>
-        )}
+        {nieuwFormulier && bewerkFormulier}
 
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
           <table className="w-full text-sm">
@@ -232,34 +223,46 @@ export default function CompetentiesPage() {
                 </tr>
               ) : (
                 competenties.map((c) => (
-                  <tr key={c.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                    <td className="px-5 py-4 font-medium text-gray-900">{c.naam}</td>
-                    <td className="px-5 py-4 text-gray-500 max-w-xs truncate">{c.omschrijving || "—"}</td>
-                    <td className="px-5 py-4 text-gray-600">{c.gewicht}%</td>
-                    <td className="px-5 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => router.push(`/admin/competenties/${c.id}/rubriek`)}
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-lg hover:bg-blue-50 text-blue-500"
-                          title="Rubriek beheren"
-                        >
-                          <BookOpen size={15} />
-                        </button>
-                        <button
-                          onClick={() => handleBewerken(c)}
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-lg hover:bg-gray-100 text-gray-500"
-                        >
-                          <Pencil size={15} />
-                        </button>
-                        <button
-                          onClick={() => handleVerwijderen(c.id)}
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-lg hover:bg-red-50 text-red-500"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+                  <React.Fragment key={c.id}>
+                    <tr className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                      <td className="px-5 py-4 font-medium text-gray-900">{c.naam}</td>
+                      <td className="px-5 py-4 text-gray-500 max-w-xs truncate">{c.omschrijving || "—"}</td>
+                      <td className="px-5 py-4 text-gray-600">{parseFloat(c.gewicht).toFixed(1)}%</td>
+                      <td className="px-5 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => router.push(`/admin/competenties/${c.id}/rubriek`)}
+                            className="inline-flex items-center justify-center w-8 h-8 rounded-lg hover:bg-blue-50 text-blue-500"
+                            title="Rubriek beheren"
+                          >
+                            <BookOpen size={15} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => handleBewerken(e, c)}
+                            className="inline-flex items-center justify-center w-8 h-8 rounded-lg hover:bg-gray-100 text-gray-500"
+                          >
+                            <Pencil size={15} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleVerwijderen(c.id)}
+                            className="inline-flex items-center justify-center w-8 h-8 rounded-lg hover:bg-red-50 text-red-500"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    {bewerkId === c.id && (
+                      <tr>
+                        <td colSpan={4} className="px-5 py-4 bg-gray-50">
+                          {bewerkFormulier}
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 ))
               )}
             </tbody>
@@ -270,19 +273,10 @@ export default function CompetentiesPage() {
           <div className="mt-4 text-xs text-right">
             Totaal gewicht:{" "}
             <span className={`font-semibold ${
-              totaalGewicht > 100 ? "text-red-500" :
-              totaalGewicht === 100 ? "text-green-600" : "text-gray-600"
+              Math.abs(totaalGewicht - 100) < 0.1 ? "text-green-600" : "text-gray-600"
             }`}>
               {totaalGewicht.toFixed(1)}%
             </span>
-            {totaalGewicht < 100 && (
-              <span className="text-gray-400 ml-2">
-                (nog {(100 - totaalGewicht).toFixed(1)}% beschikbaar)
-              </span>
-            )}
-            {totaalGewicht === 100 && (
-              <span className="text-green-500 ml-2">— perfect verdeeld</span>
-            )}
           </div>
         )}
       </div>
