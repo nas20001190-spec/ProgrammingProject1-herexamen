@@ -406,13 +406,21 @@ export default function DocentEvaluatieDetail() {
           </div>
         )}
 
-        <div className="flex gap-3 pb-6">
+                <div className="flex gap-3 pb-6">
           <button
             onClick={() => router.push("/docent/evaluaties")}
             className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
           >
             Annuleren
           </button>
+          {isFinaal && (
+            <button
+              onClick={() => window.open(`/api/admin/evaluaties/${id}/pdf`, '_blank')}
+              className="px-4 py-2 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
+            >
+              PDF downloaden
+            </button>
+          )}
           <button
             onClick={handleOpslaan}
             disabled={bezig || isVerlopen}

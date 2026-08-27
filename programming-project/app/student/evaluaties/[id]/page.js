@@ -157,13 +157,21 @@ export default function StudentEvaluatieDetail() {
 
         {fout && <div className="bg-red-50 text-red-600 border border-red-200 rounded-lg p-3 text-sm">{fout}</div>}
 
-        <div className="flex gap-3 pb-6">
+                <div className="flex gap-3 pb-6">
           <button
             onClick={() => router.push('/student/evaluaties')}
             className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
           >
             Terug
           </button>
+          {evaluatie.type === 'finaal' && (
+            <button
+              onClick={() => window.open(`/api/admin/evaluaties/${id}/pdf`, '_blank')}
+              className="px-4 py-2 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
+            >
+              PDF downloaden
+            </button>
+          )}
           <button
             onClick={handleOpslaan}
             disabled={bezig || isVerlopen}
