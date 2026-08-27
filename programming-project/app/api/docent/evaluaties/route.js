@@ -70,7 +70,19 @@ export async function POST(request) {
       );
     }
 
-            let vorigeScores = {};
+    const [evaluatieResult] = await db.query(
+      `INSERT INTO evaluatie 
+        (stage_id, beoordelaar_id, type, status, algemene_feedback_docent, datum, presentatie_datum)
+       VALUES (?, ?, ?, 'open', ?, ?, ?)`,
+      [stage_id, payload.id, type, feedback || null, datum, presentatie_datum || null],
+    );
+    const evaluatie_id = evaluatieResult.insertId;
+
+    const [competenties] = await db.query(
+      "SELECT id FROM competentie ORDER BY id ASC",
+    );
+
+    let vorigeScores = {};
     if (type === "finaal") {
       const [vorigeRijen] = await db.query(
         `SELECT es.competentie_id, es.score_docent, es.score_mentor, es.feedback_mentor
