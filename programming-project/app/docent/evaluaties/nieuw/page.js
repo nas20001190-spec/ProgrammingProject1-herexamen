@@ -9,6 +9,7 @@ export default function NieuweEvaluatiePage() {
   const router = useRouter()
   const [studenten, setStudenten] = useState([])
   const [competenties, setCompetenties] = useState([])
+  const [presentatieCriteria, setPresentatieCriteria] = useState([])
   const [loading, setLoading] = useState(true)
   const [bezig, setBezig] = useState(false)
   const [fout, setFout] = useState('')
@@ -17,15 +18,18 @@ export default function NieuweEvaluatiePage() {
   const [form, setForm] = useState({
     datum: '',
     type: 'tussentijds',
+    presentatieDatum: '',
   })
 
   useEffect(() => {
     Promise.all([
       fetchMetAuth('/api/docent/studenten').then(r => r?.json()),
       fetchMetAuth('/api/competenties').then(r => r?.json()),
-    ]).then(([studentenData, competentieData]) => {
+      fetchMetAuth('/api/docent/presentatie-criteria').then(r => r?.json()),
+    ]).then(([studentenData, competentieData, criteriaData]) => {
       setStudenten(studentenData ?? [])
       setCompetenties(competentieData ?? [])
+      setPresentatieCriteria(criteriaData ?? [])
       setLoading(false)
     }).catch(() => setLoading(false))
   }, [])
@@ -57,6 +61,7 @@ export default function NieuweEvaluatiePage() {
         type: form.type,
         datum: isFinaal ? null : form.datum,
         feedback: '',
+        presentatie_datum: isFinaal ? form.presentatieDatum : null,
       })
     })
   }
@@ -67,6 +72,10 @@ export default function NieuweEvaluatiePage() {
 
     if (!isFinaal && !form.datum) {
       setFout('Vul een deadline in!')
+      return
+    }
+    if (isFinaal && !form.presentatieDatum) {
+      setFout('Vul een presentatiedatum in!')
       return
     }
 
@@ -145,10 +154,15 @@ export default function NieuweEvaluatiePage() {
                   <p className="text-xs text-gray-400 mt-1">Na deze datum kan de evaluatie niet meer worden aangepast.</p>
                 </div>
               ) : (
-                <div className="flex items-center">
-                  <p className="text-xs text-gray-400 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 w-full">
-                    Finale evaluatie — geen deadline. De presentatiedatum wordt later ingesteld.
-                  </p>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Presentatiedatum *</label>
+                  <input
+                    type="date"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
+                    value={form.presentatieDatum}
+                    onChange={e => setForm({...form, presentatieDatum: e.target.value})}
+                  />
+                  <p className="text-xs text-gray-400 mt-1">Finale evaluatie — geen deadline, wel een verplichte presentatiedatum.</p>
                 </div>
               )}
             </div>
@@ -194,23 +208,50 @@ export default function NieuweEvaluatiePage() {
             )}
           </div>
 
-          <div className="bg-white rounded-xl p-5">
-            <h2 className="text-sm font-semibold text-gray-800 mb-1">Te evalueren competenties</h2>
-            <p className="text-xs text-gray-400 mb-4">
-              Scores en feedback vul je in na het aanmaken van de evaluatie.
-            </p>
-            {competenties.length === 0 ? (
-              <p className="text-sm text-gray-400">Geen competenties beschikbaar.</p>
-            ) : (
-              <div className="space-y-2">
-                {competenties.map(c => (
-                  <div key={c.id} className="text-sm text-gray-700 py-2 border-b border-gray-50 last:border-0">
-                    {competentieLabel(c)}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          {!isFinaal && (
+            <div className="bg-white rounded-xl p-5">
+              <h2 className="text-sm font-semibold text-gray-800 mb-1">Te evalueren competenties</h2>
+              <p className="text-xs text-gray-400 mb-4">
+                Scores en feedback vul je in na het aanmaken van de evaluatie.
+              </p>
+              {competenties.length === 0 ? (
+                <p className="text-sm text-gray-400">Geen competenties beschikbaar.</p>
+              ) : (
+                <div className="space-y-2">
+                  {competenties.map(c => (
+                    <div key={c.id} className="text-sm text-gray-700 py-2 border-b border-gray-50 last:border-0">
+                      {competentieLabel(c)}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {isFinaal && (
+            <div className="bg-white rounded-xl p-5">
+              <h2 className="text-sm font-semibold text-gray-800 mb-1">Te evalueren tijdens de presentatie</h2>
+              <p className="text-xs text-gray-400 mb-4">
+                Scores vul je in na het aanmaken van de evaluatie.
+              </p>
+              {presentatieCriteria.length === 0 ? (
+                <p className="text-sm text-gray-400">Geen presentatiecriteria beschikbaar.</p>
+              ) : (
+                <div className="space-y-2 mb-4">
+                  {presentatieCriteria.map(c => (
+                    <div key={c.id} className="text-sm text-gray-700 py-2 border-b border-gray-50 last:border-0">
+                      <span className="font-medium">{c.naam}</span>
+                      {c.omschrijving && <span className="text-gray-400"> — {c.omschrijving}</span>}
+                      <span className="text-gray-400"> ({c.gewicht}%)</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <p className="text-xs text-gray-400 border-t border-gray-50 pt-3">
+                Daarnaast vul je ook de definitieve competentiescores in na het aanmaken.
+              </p>
+            </div>
+          )}
 
           {fout && (
             <div className="bg-red-50 text-red-600 border border-red-200 rounded-lg p-3 text-sm">{fout}</div>
