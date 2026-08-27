@@ -4,11 +4,11 @@ const wrapperStart = `
       <table cellpadding="0" cellspacing="0" border="0">
         <tr>
           <td style="vertical-align: middle;">
-            <svg width="32" height="32" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-              <rect width="120" height="120" rx="20" fill="#1a2340"/>
-              <path d="M50 45 A30 30 0 1 0 50 75" fill="none" stroke="white" stroke-width="9" stroke-linecap="round"/>
-              <polyline points="65,68 75,80 95,55" fill="none" stroke="#4ade80" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+            <table cellpadding="0" cellspacing="0" border="0" style="background: #4ade80; border-radius: 8px; width: 32px; height: 32px;">
+              <tr>
+                <td align="center" valign="middle" style="width: 32px; height: 32px; color: #1a2340; font-weight: 700; font-size: 16px;">C</td>
+              </tr>
+            </table>
           </td>
           <td style="padding-left: 10px; vertical-align: middle;">
             <span style="color: #ffffff; font-size: 18px; font-weight: 700;">Competent</span>
@@ -21,8 +21,24 @@ const wrapperStart = `
 
 const wrapperEnd = `
     </div>
-    <div style="text-align: center; padding: 20px 0; color: #9CA3AF; font-size: 11px;">
-      Competent · Erasmushogeschool Brussel · Toegepaste Informatica
+    <div style="text-align: center; padding: 24px 0 10px 0;">
+      <table cellpadding="0" cellspacing="0" border="0" align="center">
+        <tr>
+          <td style="vertical-align: middle;">
+            <table cellpadding="0" cellspacing="0" border="0" style="background: #1a2340; border-radius: 6px; width: 22px; height: 22px;">
+              <tr>
+                <td align="center" valign="middle" style="width: 22px; height: 22px; color: #4ade80; font-weight: 700; font-size: 11px;">C</td>
+              </tr>
+            </table>
+          </td>
+          <td style="padding-left: 6px; vertical-align: middle;">
+            <span style="color: #1A2E4A; font-size: 13px; font-weight: 700;">Competent</span>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <div style="text-align: center; padding: 0 0 20px 0; color: #9CA3AF; font-size: 11px;">
+      Erasmushogeschool Brussel · Toegepaste Informatica
     </div>
   </div>
 `
